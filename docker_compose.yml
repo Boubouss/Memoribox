@@ -1,0 +1,44 @@
+services:
+  app:
+    image: golang:1.25-alpine
+    working_dir: /app
+    volumes:
+      - ./app:/app
+    environment:
+      - DB_HOST=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=memoribox
+      - DB_PORT=5432
+    command: sh -c "go mod download && go build -o main && ./main"
+    networks:
+      - memoribox
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: memoribox
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    networks:
+        - memoribox
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  app:
+
+networks:
+    - memoribox
